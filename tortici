@@ -1,0 +1,157 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+
+class CakeMenuItem
+{
+    public string Description { get; }
+    public decimal Price { get; }
+
+    public CakeMenuItem(string description, decimal price)
+    {
+        Description = description;
+        Price = price;
+    }
+}
+
+class Order
+{
+    private List<CakeMenuItem> selectedItems = new List<CakeMenuItem>();
+
+    public List<CakeMenuItem> SelectedItems
+    {
+        get { return selectedItems; }
+    }
+
+    public decimal GetTotalPrice()
+    {
+        decimal total = 0;
+        foreach (var item in selectedItems)
+        {
+            total += item.Price;
+        }
+        return total;
+    }
+
+    public void AddToOrder(CakeMenuItem item)
+    {
+        selectedItems.Add(item);
+    }
+
+    public void SaveOrder(string fileName)
+    {
+        using (StreamWriter writer = File.AppendText(fileName))
+        {
+            writer.WriteLine("Заказ:");
+            foreach (var item in selectedItems)
+            {
+                writer.WriteLine($"{item.Description} - {item.Price:C}");
+            }
+            writer.WriteLine($"Итоговая стоимость заказа: {GetTotalPrice():C}");
+            writer.WriteLine(new string('-', 40));
+        }
+    }
+
+    public void ClearOrder()
+    {
+        selectedItems.Clear();
+    }
+}
+
+class ConsoleMenu
+{
+    public static int ShowMenu(string[] options, string title)
+    {
+        Console.Clear();
+        Console.WriteLine(title);
+        for (int i = 0; i < options.Length; i++)
+        {
+            Console.WriteLine($"{i + 1}. {options[i]}");
+        }
+
+        int choice;
+        while (true)
+        {
+            Console.Write("Выберите опцию: ");
+            if (int.TryParse(Console.ReadLine(), out choice) && choice >= 1 && choice <= options.Length)
+            {
+                return choice;
+            }
+            else
+            {
+                Console.WriteLine("Неправильный выбор. Попробуйте еще раз.");
+            }
+        }
+    }
+}
+
+class Program
+{
+    static void Main()
+    {
+        decimal shapePrice = 150; 
+        decimal sizePrice = 80;  
+        decimal flavorPrice = 60;  
+        decimal icingPrice = 40;  
+        decimal decorPrice = 100;  
+
+        string[] mainMenuOptions = { "Форма", "Размер", "Вкус", "Глазурь", "Декор", "Завершить заказ" };
+        string[] shapeOptions = { "Круглая", "Квадратная", "Треугольная" };
+        string[] sizeOptions = { "Маленький", "Средний", "Большой" };
+        string[] flavorOptions = { "Шоколадный", "Ванильный", "Клубничный" , "Фисташковый" };
+        string[] icingOptions = { "Шоколадная", "Ванильная", "Клубничная" };
+        string[] decorOptions = { "Цветы", "Фрукты", "Башни" };
+
+        Order currentOrder = new Order();
+        string historyFileName = "История заказов.txt";
+
+        while (true)
+        {
+            int mainChoice = ConsoleMenu.ShowMenu(mainMenuOptions, "Главное меню");
+
+            if (mainChoice == mainMenuOptions.Length)
+            {
+                Console.WriteLine("Завершение заказа...");
+                currentOrder.SaveOrder(historyFileName);
+                Console.WriteLine($"Заказ сохранен. Итоговая стоимость: {currentOrder.GetTotalPrice():C}");
+                Console.ReadKey();
+                currentOrder.ClearOrder();
+                continue;
+            }
+
+            string category = mainMenuOptions[mainChoice - 1];
+            string[] categoryOptions = null;
+            decimal categoryPrice = 0;
+
+            switch (category)
+            {
+                case "Форма":
+                    categoryOptions = shapeOptions;
+                    categoryPrice = shapePrice;
+                    break;
+                case "Размер":
+                    categoryOptions = sizeOptions;
+                    categoryPrice = sizePrice;
+                    break;
+                case "Вкус":
+                    categoryOptions = flavorOptions;
+                    categoryPrice = flavorPrice;
+                    break;
+                case "Глазурь":
+                    categoryOptions = icingOptions;
+                    categoryPrice = icingPrice;
+                    break;
+                case "Декор":
+                    categoryOptions = decorOptions;
+                    categoryPrice = decorPrice;
+                    break;
+            }
+
+            int subChoice = ConsoleMenu.ShowMenu(categoryOptions, category);
+
+            string selectedItem = categoryOptions[subChoice - 1];
+
+            currentOrder.AddToOrder(new CakeMenuItem(selectedItem, categoryPrice));
+        }
+    }
+}
